@@ -1,5 +1,5 @@
 //
-//  MemeViewController.swift
+//  MemeEditorViewController.swift
 //  MemeMe
 //
 //  Created by Nikko on 3/8/17.
@@ -8,22 +8,7 @@
 
 import UIKit
 
-struct Meme {
-    var topText1: String?
-    var bottomText1: String?
-    var originalImage1: UIImage?
-    var memedImage1: UIImage?
-    
-    init(topText: String?, bottomText: String?, originalImage: UIImage?, memedImage: UIImage? ) {
-        topText1 = topText
-        bottomText1 = bottomText
-        originalImage1 = originalImage
-        memedImage1 = memedImage
-    }
-    
-}
-
-class MemeViewController: UIViewController {
+class MemeEditorViewController: UIViewController {
 
     @IBOutlet weak var shareButton: UIBarButtonItem!
     @IBOutlet weak var toolbar: UIToolbar!
@@ -40,13 +25,11 @@ class MemeViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        subscribeToKeyboardNotifications()
         cameraButton.isEnabled = UIImagePickerController.isSourceTypeAvailable(.camera)
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        unsubscribeToKeyboardNotifications()
     }
     
     @IBAction func albumButtonTapped(_ sender: UIButton) {
@@ -81,8 +64,8 @@ class MemeViewController: UIViewController {
     @IBAction func shareButtonTapped(_ sender: UIBarButtonItem) {
         memedImage = generateMemedImage()
         imagePickerView.image = memedImage
-        let sharingItems = [imagePickerView.image]
-        let activityViewController = UIActivityViewController(activityItems: sharingItems, applicationActivities: nil)
+       // let sharingItems = [imagePickerView.image]
+        let activityViewController = UIActivityViewController(activityItems: [memedImage ?? 0], applicationActivities: nil)
         self.present(activityViewController, animated: true) { [weak self] in
             self?.save()
         }
@@ -90,6 +73,11 @@ class MemeViewController: UIViewController {
     
     func save() {
         let meme = Meme(topText: topTextField.text, bottomText: bottomTextField.text, originalImage: imagePickerView.image, memedImage: memedImage)
+        
+        let object = UIApplication.shared.delegate
+        let appDelegate = object as! AppDelegate
+        appDelegate.memes.append(meme)
+        
     }
     
     @IBAction func cancelButtonTapped(_ sender: UIBarButtonItem) {
@@ -97,6 +85,7 @@ class MemeViewController: UIViewController {
         bottomTextField.text = "Bottom"
         imagePickerView.image = nil
         shareButton.isEnabled = false
+        dismiss(animated: true, completion: nil)
     }
     
     func generateMemedImage() -> UIImage {
@@ -136,7 +125,7 @@ class MemeViewController: UIViewController {
 
 }
 
-extension MemeViewController: UIImagePickerControllerDelegate {
+extension MemeEditorViewController: UIImagePickerControllerDelegate {
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
         if let image = info[UIImagePickerControllerOriginalImage] as? UIImage {
             imagePickerView.image = image
@@ -150,17 +139,23 @@ extension MemeViewController: UIImagePickerControllerDelegate {
     }
 }
 
-extension MemeViewController: UINavigationControllerDelegate {
+extension MemeEditorViewController: UINavigationControllerDelegate {
 
 }
 
-extension MemeViewController: UITextFieldDelegate {
+extension MemeEditorViewController: UITextFieldDelegate {
     func textFieldDidBeginEditing(_ textField: UITextField) {
         textField.text = ""
+        if textField == bottomTextField {
+            subscribeToKeyboardNotifications()
+        }
     }
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
+        if textField == bottomTextField {
+            unsubscribeToKeyboardNotifications()
+        }
         return true
     }
 }
